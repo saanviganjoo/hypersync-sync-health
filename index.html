@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HyperSync Sync Health</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,400,0..1,0&icon_names=arrow_drop_down,bolt,business_center,check,check_circle,chevron_right,close,content_copy,conversion_path,corporate_fare,dashboard,description,download,error,expand_more,fact_check,headset_mic,help,info,lock,menu_book,menu_open,merge,monitor_heart,notifications,notifications_active,open_in_new,refresh,schedule,search,settings,storage,sync,warning,webhook&display=block">
+<style>
+/* Layout: the live HyperSync shell (grey-50 frame, 240px sidebar, 64px header, white content card with 16px top radius).
+   Tokens are copied from hypersync.tartanhq.com computed styles (Tailwind blueBerry / grey / success / error / warning scales).
+   Single light theme on purpose: the product has no dark mode. */
+:root{
+  color-scheme:light;
+  --frame:#F9FAFB;            /* grey-50  app frame, header, sidebar */
+  --card:#FFFFFF;
+  --card-border:#EEEFF1;      /* grey-125 content card + table border */
+  --row-border:#ECEEF1;       /* grey-150 */
+  --stat-border:#E4E7EC;      /* grey-200 */
+  --th-bg:#FBFCFF;            /* grey-20  table header + zebra */
+  --hover:#E6EDF5;            /* blueBerry-75 row hover / active nav */
+  --nav-active-border:#8EAFDA;/* blueBerry-250 */
+  --brand:#0952B2;            /* blueBerry-650 active nav text, links */
+  --primary:#3762DD;          /* blueBerry-500 buttons */
+  --primary-hover:#254CBB;    /* blueBerry-600 */
+  --logo:#4B7AFF;             /* blueBerry-400 */
+  --blue-25:#F6F9FF; --blue-50:#EDF1FF; --blue-100:#C4D4FF;
+  --ink:#000000; --ink-80:rgba(0,0,0,.8); --ink-60:rgba(0,0,0,.6); --ink-40:rgba(0,0,0,.4); --ink-08:rgba(0,0,0,.08);
+  --grey-900:#101828; --grey-800:#1D2939; --grey-700:#344054; --grey-600:#475467; --grey-500:#667085; --grey-400:#98A2B3; --grey-300:#D0D5DD; --grey-100:#F2F4F7;
+  --sub:#666666;              /* neutralsAsh-55 page subtitle */
+  --ok-bg:#ECFDF3; --ok-bd:#D1FADF; --ok-tx:#1DA366; --ok-bar:#12B76A;
+  --err-500:#F97066; --err-bg:#FEF3F2; --err-bd:#FEE4E2; --err-tx:#D92D20; --err-bar:#F04438;
+  --warn-bg:#FFFAEB; --warn-bd:#FEEFC7; --warn-tx:#B54708; --warn-bar:#FDB022;
+  --info-bg:#EDF1FF; --info-bd:#C4D4FF; --info-tx:#3762DD;
+  --shadow-menu:0 4px 6px -2px rgba(16,24,40,.03),0 12px 16px -4px rgba(16,24,40,.08);
+  --shadow-drawer:0 20px 24px -4px rgba(16,24,40,.08),0 8px 8px -4px rgba(16,24,40,.03);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--frame); color:#1A202C; font-family:var(--font); font-size:14px; line-height:20px; margin:0}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--primary); outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono); font-size:12px; font-weight:500; color:var(--ink-60)}
+.mi{font-family:'Material Symbols Outlined'; font-weight:normal; font-style:normal; font-size:20px; line-height:1; letter-spacing:normal; text-transform:none; white-space:nowrap; direction:ltr; display:inline-block; width:1em; height:1em; overflow:hidden; flex:none; font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20; vertical-align:middle}
+.mi.sm{font-size:16px} .mi.xs{font-size:14px} .mi.fill{font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20}
+
+/* ---------- shell ---------- */
+.app{display:grid; grid-template-columns:240px minmax(0,1fr); min-height:100vh}
+.sidebar{position:sticky; top:0; height:100vh; display:flex; flex-direction:column; background:var(--frame)}
+.brand{height:64px; display:flex; align-items:center; gap:8px; padding:0 16px}
+.logo{width:32px; height:32px; border-radius:4px; background:var(--logo); color:#fff; font-weight:600; font-size:16px; display:grid; place-items:center}
+.brand-name{font-size:16px; font-weight:600; color:var(--grey-800); flex:1}
+.brand .mi{color:var(--grey-700)}
+.nav{flex:1; overflow-y:auto; padding:8px 20px}
+.nav-item{width:100%; height:36px; display:flex; align-items:center; gap:8px; padding:8px 12px; margin-bottom:8px; border:1px solid transparent; border-radius:8px; background:none; cursor:pointer; text-align:left}
+.nav-item .mi{color:var(--ink-80)}
+.nav-item span.t{font-size:14px; font-weight:500; color:var(--ink-80); flex:1}
+.nav-item:hover{background:var(--grey-100)}
+.nav-item.active{background:var(--hover); border-color:var(--nav-active-border)}
+.nav-item.active span.t,.nav-item.active .mi{color:var(--brand)}
+.new-pill{font-size:11px; font-weight:500; line-height:16px; padding:1px 8px; border-radius:24px; background:var(--warn-bg); border:1px solid var(--warn-bd); color:#E0781D}
+.nav-foot{border-top:1px solid var(--stat-border); margin:0 20px; padding:12px 0}
+.col{min-width:0; display:flex; flex-direction:column}
+.topbar{height:64px; display:flex; align-items:center; justify-content:flex-end; gap:20px; padding-right:24px}
+.topbar .bell{position:relative; color:var(--ink)}
+.topbar .bell::after{content:""; position:absolute; top:1px; right:2px; width:6px; height:6px; border-radius:50%; background:var(--err-bar); border:1px solid var(--frame)}
+.user{display:flex; align-items:center; gap:14px; padding-left:20px; border-left:1px solid var(--stat-border)}
+.user b{display:block; font-size:15px; font-weight:500; color:var(--ink)}
+.user small{display:block; font-size:13px; color:var(--grey-600)}
+.content{flex:1; background:var(--card); border:1px solid var(--card-border); border-bottom:0; border-radius:16px 16px 0 0; margin-right:20px; padding:24px; min-width:0}
+
+/* ---------- page head ---------- */
+.page-head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px 20px}
+.page-head h1{margin:0; font-size:20px; line-height:28px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px}
+.page-head p{margin:4px 0 0; font-size:14px; color:var(--sub)}
+.head-actions{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.updated{font-size:12px; color:var(--grey-500)}
+.btn{display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 16px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; border:1px solid transparent}
+.btn.primary{background:var(--primary); color:#fff} .btn.primary:hover{background:var(--primary-hover)}
+.btn.outline{background:#fff; color:var(--primary); border-color:var(--primary)} .btn.outline:hover{background:var(--blue-25)}
+.btn.grey{background:#fff; color:var(--grey-700); border-color:var(--grey-300)} .btn.grey:hover{background:var(--frame)}
+.btn .count{font-size:12px; font-weight:500; line-height:18px; padding:0 7px; border-radius:24px; background:var(--info-bg); color:var(--info-tx)}
+.icon-btn{width:36px; height:36px; display:grid; place-items:center; border:1px solid var(--card-border); border-radius:8px; background:#fff; cursor:pointer; color:var(--ink-80)}
+.icon-btn:hover{background:var(--frame)}
+.link{color:var(--brand); font-size:12px; font-weight:500; background:none; border:0; padding:4px 6px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:2px; white-space:nowrap}
+.link:hover{background:var(--hover)}
+.help{color:var(--grey-400); cursor:help; display:inline-flex}
+.help .mi{font-size:16px}
+
+/* ---------- stat cards (Connections page pattern) ---------- */
+.stats{display:grid; grid-template-columns:repeat(var(--cols,4),minmax(0,1fr)); gap:16px; margin-top:24px}
+.stat{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; background:#fff; border:1px solid var(--stat-border); border-radius:16px; padding:20px; text-align:left; min-width:0}
+button.stat{cursor:pointer} button.stat:hover{border-color:var(--grey-300)}
+.stat.on{border-color:var(--nav-active-border); background:var(--blue-25)}
+.stat-l{font-size:14px; font-weight:500; color:var(--grey-500); display:flex; align-items:center; gap:4px}
+.stat-v{font-size:20px; font-weight:500; line-height:30px; color:var(--grey-900); margin-top:8px; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap}
+.stat-v small{font-size:12px; font-weight:500; color:var(--grey-500)}
+.stat-s{font-size:12px; color:var(--grey-500); margin-top:2px}
+.ibox{width:44px; height:44px; flex:none; display:grid; place-items:center; background:var(--frame); border:.5px solid var(--stat-border); border-radius:8px; color:var(--grey-700)}
+.t-err{color:var(--err-tx)} .t-ok{color:var(--ok-tx)} .t-warn{color:var(--warn-tx)} .t-muted{color:var(--grey-400)}
+
+/* ---------- filters ---------- */
+.filters{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:16px 0}
+.search{position:relative; width:380px; max-width:100%}
+.search .mi{position:absolute; left:14px; top:8px; color:var(--grey-400)}
+.search input{width:100%; height:36px; border:1px solid var(--ink-08); border-radius:8px; background:#fff; padding:0 24px 0 42px; font-size:12px; color:var(--ink-80); outline:0}
+.search input::placeholder{color:var(--ink-40)}
+.search input:focus{border-color:var(--primary)}
+.dd{position:relative}
+.dd-btn{height:36px; display:flex; align-items:center; gap:4px; padding:8px 12px 8px 16px; background:#fff; border:1px solid var(--card-border); border-radius:8px; font-size:14px; color:var(--ink-80); cursor:pointer; white-space:nowrap}
+.dd-btn .mi{font-size:20px; color:var(--ink-80)}
+.dd-btn.set{border-color:var(--nav-active-border); background:var(--blue-25)}
+.dd-menu{position:absolute; top:calc(100% + 8px); left:0; z-index:20; min-width:100%; background:#fff; border:1px solid var(--card-border); border-radius:8px; box-shadow:var(--shadow-menu); padding:8px}
+.dd-item{display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; padding:10px 16px; border:0; background:none; border-radius:8px; font-size:14px; color:var(--ink-80); cursor:pointer; text-align:left; white-space:nowrap}
+.dd-item:hover{background:var(--grey-100)}
+.dd-item[aria-selected="true"]{background:var(--grey-100)}
+.dd-item .mi{font-size:16px; color:var(--brand); visibility:hidden}
+.dd-item[aria-selected="true"] .mi{visibility:visible}
+.clear{font-size:12px; font-weight:500; color:var(--brand); background:none; border:0; cursor:pointer; padding:6px}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:28px; margin-top:28px; border-bottom:1px solid var(--card-border)}
+.tab{display:flex; align-items:center; gap:8px; padding:10px 2px; margin-bottom:-1px; background:none; border:0; border-bottom:2px solid transparent; font-size:14px; font-weight:500; color:var(--grey-500); cursor:pointer}
+.tab:hover{color:var(--grey-700)}
+.tab.on{color:var(--brand); border-bottom-color:var(--brand); font-weight:600}
+.tcount{font-size:12px; font-weight:500; line-height:18px; padding:0 8px; border-radius:24px; background:var(--grey-100); color:var(--grey-600)}
+.tab.on .tcount{background:var(--hover); color:var(--brand)}
+.tissue{font-size:12px; font-weight:500; line-height:16px; padding:0 7px; border-radius:24px; background:var(--err-bg); border:1px solid var(--err-bd); color:var(--err-tx)}
+/* ---------- pager (Sync Logs pattern) ---------- */
+.pager{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--card-border); font-size:12px; color:var(--grey-500)}
+.pgs{display:flex; gap:6px}
+.pg{min-width:26px; height:26px; padding:0 6px; display:grid; place-items:center; border:1px solid var(--card-border); border-radius:6px; background:#fff; font-size:12px; font-weight:500; color:var(--ink-80); cursor:pointer}
+.pg.on{background:var(--hover); border-color:var(--brand); color:var(--brand)}
+.pg:disabled{opacity:.4; cursor:default}
+.mi.flip{transform:rotate(180deg)}
+/* ---------- legacy sections ---------- */
+.section{margin-bottom:24px}
+.sec-head{width:100%; display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:6px 0 12px; background:none; border:0; cursor:pointer; text-align:left}
+.sec-head .chev{color:var(--grey-700); transition:transform .15s}
+.section[data-open="false"] .sec-head .chev{transform:rotate(-90deg)}
+.sec-title{font-size:16px; line-height:24px; font-weight:600; color:var(--grey-900)}
+.sec-meta{margin-left:auto; font-size:12px; color:var(--grey-500)}
+.sec-meta b{font-size:14px; font-weight:600; color:var(--grey-900); margin-left:4px}
+.section[data-open="false"] .sec-body{display:none}
+.callout{display:flex; gap:10px; align-items:flex-start; padding:12px 16px; margin-bottom:12px; background:var(--blue-25); border:1px solid var(--info-bd); border-radius:8px; font-size:12px; line-height:18px; color:var(--grey-700)}
+.callout .mi{color:var(--info-tx)}
+.callout b{display:block; font-size:13px; font-weight:600; color:var(--grey-900); margin-bottom:2px}
+
+/* ---------- table (Sync Logs pattern) ---------- */
+.tbl{border:1px solid var(--card-border); border-radius:12px; background:#fff; overflow-x:auto}
+#callout:empty{display:none}
+table{width:100%; border-collapse:collapse}
+#mainTbl{table-layout:fixed; min-width:960px}
+#mainTbl td{overflow:hidden; text-overflow:ellipsis}
+tr.child > td{background:#FCFCFD; border-bottom-color:var(--row-border)}
+tr.child > td:first-child{padding-left:52px}
+tr.child:hover > td{background:var(--blue-25)}
+tr.child.foot > td{padding-top:8px; padding-bottom:8px}
+tr.child.foot td{display:table-cell}
+tr.child.foot .t-muted{margin-left:12px}
+th{background:var(--th-bg); font-size:12px; line-height:20px; font-weight:600; color:var(--ink); text-align:left; padding:12px 12px 12px 16px; border-bottom:1px solid var(--card-border); white-space:nowrap}
+td{font-size:12px; line-height:18px; font-weight:500; color:var(--ink-60); padding:12px; border-bottom:1px solid var(--row-border); vertical-align:middle}
+td:first-child{padding-left:16px}
+tbody > tr:last-child > td{border-bottom:0}
+tbody > tr.z > td{background:var(--th-bg)}
+tbody > tr.row{cursor:pointer}
+tbody > tr.row:hover > td{background:var(--hover)}
+tr.row.open > td{background:var(--hover); border-bottom-color:transparent}
+.hrms{display:flex; align-items:center; gap:10px; white-space:nowrap}
+.hrms .chev{color:var(--grey-500); transition:transform .15s}
+tr.open .hrms .chev{transform:rotate(90deg)}
+.hlogo{width:28px; height:28px; border-radius:6px; display:grid; place-items:center; font-size:11px; font-weight:600; color:#fff; flex:none}
+.name{font-size:12px; font-weight:600; color:var(--ink-80)}
+.sub{display:block; font-size:12px; font-weight:400; color:var(--grey-500); white-space:nowrap}
+.badge{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; line-height:18px; padding:4px 8px; border-radius:24px; border:1px solid; white-space:nowrap; width:max-content}
+.badge.ok{background:var(--ok-bg); border-color:var(--ok-bd); color:var(--ok-tx)}
+.badge.err{background:var(--err-bg); border-color:var(--err-bd); color:var(--err-tx)}
+.badge.warn{background:var(--warn-bg); border-color:var(--warn-bd); color:var(--warn-tx)}
+.badge.info{background:var(--info-bg); border-color:var(--info-bd); color:var(--info-tx)}
+.badge.neu{background:var(--grey-100); border-color:var(--stat-border); color:var(--grey-600)}
+.badge.dash{background:#fff; border:1px dashed var(--grey-300); color:var(--grey-500)}
+.badge.sm{padding:1px 8px}
+.dot{width:6px; height:6px; border-radius:50%; background:currentColor}
+.badge.info .dot{animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion: reduce){.badge.info .dot{animation:none} .chev{transition:none!important} .drawer{transition:none!important}}
+.hb{display:flex; align-items:center; gap:10px}
+.hb-val{width:44px; font-size:12px; font-weight:600; color:var(--ink-80)}
+.hb-track{position:relative; width:96px; height:4px; border-radius:2px; background:var(--grey-100); flex:none}
+.hb-fill{position:absolute; inset:0 auto 0 0; border-radius:2px; background:var(--logo)}
+.hb-fill.low{background:var(--err-500)}
+.hb-tick{position:absolute; top:-3px; width:1px; height:10px; margin-left:-.5px; background:var(--grey-400); opacity:.8}
+.strong{display:block; font-size:12px; font-weight:500; color:var(--ink-80)}
+.attn{white-space:normal}
+.mode{display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; padding:1px 8px; border-radius:6px; border:1px solid var(--stat-border); color:var(--grey-600); background:#fff; white-space:nowrap}
+.mode.pt{border-color:var(--info-bd); background:var(--blue-25); color:var(--info-tx)}
+.mode .mi{font-size:14px}
+.cid{display:inline-flex; align-items:center; gap:4px; background:none; border:0; padding:0; cursor:pointer}
+.cid:hover .mono{color:var(--brand)}
+.cid .mi{font-size:12px; color:var(--grey-400)}
+.reason{min-width:0}
+.reason b{font-weight:600; color:var(--ink-80)}
+.reason .msg, .reason b{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+.when{white-space:nowrap}
+.r{text-align:right; white-space:nowrap}
+tr.detail > td{background:var(--frame); padding:4px 16px 16px}
+.inner{border:1px solid var(--card-border); border-radius:8px; background:#fff; overflow-x:auto}
+.inner th{padding:10px 12px}
+.inner td{padding:10px 12px}
+.inner th:first-child,.inner td:first-child{padding-left:16px}
+.inner-foot{padding:8px 16px; font-size:12px; color:var(--grey-500); border-top:1px solid var(--row-border)}
+.empty{padding:32px 16px; text-align:center; font-size:12px; color:var(--grey-500)}
+.empty b{display:block; font-size:14px; font-weight:600; color:var(--grey-900); margin-bottom:4px}
+.spark{display:block}
+
+/* ---------- tooltip / toast ---------- */
+#tip{position:fixed; z-index:80; max-width:300px; background:var(--grey-900); color:#fff; font-size:12px; line-height:18px; font-weight:500; padding:8px 12px; border-radius:8px; box-shadow:var(--shadow-menu); pointer-events:none; opacity:0; transition:opacity .08s}
+#tip.show{opacity:1}
+[data-tip]{cursor:help}
+button[data-tip],tr[data-tip]{cursor:pointer}
+#toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,16px); display:flex; align-items:center; gap:8px; background:var(--grey-900); color:#fff; padding:10px 16px; border-radius:8px; font-size:14px; font-weight:500; box-shadow:var(--shadow-drawer); opacity:0; pointer-events:none; transition:all .2s; z-index:90; max-width:calc(100% - 32px)}
+#toast .mi{color:var(--ok-bar)}
+#toast.show{opacity:1; transform:translate(-50%,0)}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed; inset:0; background:rgba(16,24,40,.4); z-index:60}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(520px,100%); background:#fff; z-index:70; box-shadow:var(--shadow-drawer); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .2s ease}
+.drawer.open{transform:none}
+.d-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:20px 24px 16px; padding-top:calc(20px + env(safe-area-inset-top,0px)); border-bottom:1px solid var(--card-border)}
+.d-head h2{margin:0; font-size:18px; line-height:28px; font-weight:600; color:var(--grey-900)}
+.d-head p{margin:2px 0 0; font-size:13px; color:var(--grey-500); word-break:break-all}
+.d-body{flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:24px}
+.d-foot{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 24px; padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--card-border)}
+.field{display:flex; flex-direction:column; gap:6px}
+.f-label{font-size:14px; font-weight:500; color:var(--grey-700)}
+.hint{margin:0; font-size:12px; color:var(--grey-500)}
+.err-msg{margin:0; font-size:12px; color:var(--err-tx)}
+.chipbox{display:flex; flex-wrap:wrap; gap:6px; padding:6px 8px; min-height:40px; border:1px solid var(--grey-300); border-radius:8px; cursor:text}
+.chipbox:focus-within{border-color:var(--primary); box-shadow:0 0 0 3px var(--blue-50)}
+.chipbox input{flex:1; min-width:160px; border:0; outline:0; font-size:14px; padding:2px 4px; background:transparent}
+.echip{display:inline-flex; align-items:center; gap:2px; padding:2px 4px 2px 8px; border-radius:6px; border:1px solid var(--stat-border); background:var(--grey-100); font-size:12px; font-weight:500; color:var(--grey-700)}
+.echip button{border:0; background:none; cursor:pointer; padding:0; display:grid; color:var(--grey-500)}
+.echip .mi{font-size:14px}
+.thr{display:flex; align-items:center; gap:12px}
+.thr input[type=range]{flex:1; accent-color:var(--primary)}
+.numbox{width:76px; height:36px; border:1px solid var(--grey-300); border-radius:8px; padding:0 10px; font-size:14px; text-align:right; outline:0}
+.numbox:focus{border-color:var(--primary)}
+.numbox::placeholder{color:var(--grey-400); font-size:12px}
+.list{border:1px solid var(--card-border); border-radius:8px}
+.li{display:flex; align-items:center; gap:10px; padding:8px 12px; border-top:1px solid var(--row-border); font-size:13px}
+.li:first-child{border-top:0}
+.li .n{flex:1; font-weight:500; color:var(--grey-800)}
+.li .now{font-size:12px; color:var(--grey-500)}
+.rule{display:grid; grid-template-columns:90px 1fr; gap:12px; padding:10px 12px; border-top:1px solid var(--row-border); font-size:12px; color:var(--grey-600)}
+.rule:first-child{border-top:0}
+.rule b{font-weight:600; color:var(--grey-800)}
+.tg{display:flex; justify-content:space-between; gap:16px; padding:12px; border-top:1px solid var(--row-border); cursor:pointer}
+.tg:first-child{border-top:0}
+.tg b{font-size:13px; font-weight:500; color:var(--grey-800)}
+.switch{position:relative; width:36px; height:20px; flex:none}
+.switch input{position:absolute; inset:0; opacity:0; margin:0; cursor:pointer}
+.switch span{position:absolute; inset:0; border-radius:12px; background:var(--grey-100); border:1px solid var(--stat-border); transition:background .15s; pointer-events:none}
+.switch span::after{content:""; position:absolute; top:1px; left:1px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.12); transition:transform .15s}
+.switch input:checked + span{background:var(--primary); border-color:var(--primary)}
+.switch input:checked + span::after{transform:translateX(16px)}
+.switch input:focus-visible + span{outline:2px solid var(--primary); outline-offset:2px}
+.kpis{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px}
+.kpi{border:1px solid var(--stat-border); border-radius:12px; padding:12px}
+.kpi .l{font-size:12px; font-weight:500; color:var(--grey-500)}
+.kpi .v{font-size:18px; line-height:28px; font-weight:500; color:var(--grey-900)}
+.h3{display:flex; justify-content:space-between; align-items:baseline; margin:0 0 8px; font-size:14px; font-weight:600; color:var(--grey-900)}
+.h3 span{font-size:12px; font-weight:400; color:var(--grey-500)}
+.legend{display:flex; gap:16px; margin-top:8px; font-size:12px; color:var(--grey-500)}
+.legend i{display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px}
+.privacy{display:flex; gap:8px; align-items:flex-start; padding:12px; border-radius:8px; background:var(--frame); font-size:12px; color:var(--grey-600)}
+.privacy .mi{font-size:16px; color:var(--grey-500)}
+
+/* ---------- prototype controls (not product UI) ---------- */
+.proto{position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:50; width:216px; background:#fff; border:1px solid var(--stat-border); border-radius:12px; box-shadow:var(--shadow-drawer); font-size:12px}
+.proto-h{width:100%; display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:0; background:none; cursor:pointer; font-size:13px; font-weight:600; color:var(--grey-900)}
+.proto-b{padding:0 12px 12px; display:flex; flex-direction:column; gap:10px}
+.proto[data-min="true"] .proto-b{display:none}
+.proto .lbl{font-size:11px; font-weight:600; color:var(--grey-500); margin-bottom:4px}
+.seg{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:2px; background:var(--grey-100); border-radius:8px}
+.seg button{border:0; background:none; border-radius:6px; padding:5px 4px; font-size:11.5px; font-weight:500; color:var(--grey-600); cursor:pointer; line-height:15px}
+.seg button[aria-pressed="true"]{background:#fff; color:var(--grey-900); box-shadow:0 1px 2px rgba(16,24,40,.08)}
+.proto a{color:var(--brand); font-weight:500; text-decoration:none}
+.proto a:hover{text-decoration:underline}
+
+@media (max-width:1180px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:900px){ .app{grid-template-columns:1fr} .sidebar{display:none} .content{margin:0; border-radius:16px 16px 0 0; padding:20px 16px} .topbar{padding-right:16px} .proto{left:auto; right:16px} }
+@media (max-width:560px){ .stats{grid-template-columns:1fr} .kpis{grid-template-columns:repeat(2,1fr)} .proto{left:16px; width:auto} .sec-meta{margin-left:0; width:100%} .user small{display:none} .search{width:100%} }
+</style>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand"><span class="logo">K</span><span class="brand-name">Kredify</span><span class="mi">menu_open</span></div>
+    <nav class="nav">
+      <button class="nav-item" type="button"><span class="mi">dashboard</span><span class="t">Dashboard</span></button>
+      <button class="nav-item" type="button"><span class="mi">conversion_path</span><span class="t">Connections</span></button>
+      <button class="nav-item" type="button"><span class="mi">description</span><span class="t">Reporting</span></button>
+      <button class="nav-item" type="button"><span class="mi">business_center</span><span class="t">Corporates</span></button>
+      <button class="nav-item" type="button"><span class="mi">merge</span><span class="t">Integrations</span></button>
+      <button class="nav-item" type="button"><span class="mi">storage</span><span class="t">Data Models</span></button>
+      <button class="nav-item" type="button"><span class="mi">webhook</span><span class="t">Webhooks</span></button>
+      <button class="nav-item" type="button"><span class="mi">sync</span><span class="t">Sync Logs</span></button>
+      <button class="nav-item active" type="button" aria-current="page"><span class="mi">monitor_heart</span><span class="t">Sync Health</span><span class="new-pill">New</span></button>
+      <button class="nav-item" type="button"><span class="mi">corporate_fare</span><span class="t">Organisation</span></button>
+      <button class="nav-item" type="button"><span class="mi">fact_check</span><span class="t">Audit Logs</span></button>
+      <button class="nav-item" type="button"><span class="mi">settings</span><span class="t">Settings</span><span class="mi sm">chevron_right</span></button>
+    </nav>
+    <div class="nav-foot">
+      <button class="nav-item" type="button"><span class="mi">headset_mic</span><span class="t">Help &amp; Support</span></button>
+      <button class="nav-item" type="button" style="margin-bottom:0"><span class="mi">menu_book</span><span class="t">Documentation ↗</span></button>
+    </div>
+  </aside>
+
+  <div class="col">
+    <header class="topbar">
+      <span class="mi bell fill">notifications</span>
+      <div class="user"><div><b>Kredify Finance</b><small>ops@kredify.in</small></div><span class="mi">arrow_drop_down</span></div>
+    </header>
+
+    <main class="content">
+      <div class="page-head">
+        <div>
+          <h1>Sync Health <span class="help" data-tip="A connection is healthy when its latest sync succeeded or partly succeeded. Health % = healthy ÷ (healthy + failed + stuck). Running connections and connections that haven't synced yet aren't counted. Each connection counts the same, whether it syncs daily, weekly or monthly."><span class="mi">help</span></span></h1>
+          <p>Whether each active HRMS and SFTP connection is syncing, based on its latest run</p>
+        </div>
+        <div class="head-actions">
+          <span class="updated" id="updated">Updated just now</span>
+          <button class="icon-btn" id="refresh" type="button" data-tip="Refresh"><span class="mi">refresh</span></button>
+          <button class="btn outline" id="openAlerts" type="button"><span class="mi">notifications_active</span>Alert Settings<span class="count" id="recipCount">2</span></button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="tabs" id="tabs" role="tablist" aria-label="Connection type"></div>
+      <div class="filters">
+        <div class="search"><span class="mi">search</span><input id="q" type="search" placeholder="Search HRMS, corporate or connection ID" aria-label="Search"></div>
+        <div class="dd" data-key="status"></div>
+        <div class="dd" data-key="mode"></div>
+        <button class="clear" id="clearF" type="button" hidden>Clear filters</button>
+      </div>
+      <div id="callout"></div>
+      <div class="tbl"><table id="mainTbl"></table><div class="pager" id="pager"></div></div>
+    </main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="d-head"><div><h2 id="dTitle"></h2><p id="dSub"></p></div><button class="icon-btn" id="dClose" type="button" aria-label="Close" style="border:0"><span class="mi">close</span></button></div>
+  <div class="d-body" id="dBody"></div>
+  <div class="d-foot" id="dFoot"></div>
+</aside>
+
+<div class="proto" id="proto" data-min="false">
+  <button class="proto-h" type="button" id="protoToggle" aria-expanded="true">Preview scenarios <span class="badge warn sm">Prototype</span></button>
+  <div class="proto-b">
+    <div><div class="lbl">Client setup</div><div class="seg" id="segClient"><button type="button" data-v="mixed" aria-pressed="true">Scheduled + passthrough</button><button type="button" data-v="pt" aria-pressed="false">Passthrough only</button></div></div>
+    <div><div class="lbl">Passthrough tracking</div><div class="seg" id="segTrack"><button type="button" data-v="today" aria-pressed="true">Today</button><button type="button" data-v="proposed" aria-pressed="false">Proposed</button></div></div>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+<div id="toast" role="status" aria-live="polite"><span class="mi fill">check_circle</span><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+const NOW=Date.parse('2026-10-29T10:40:00Z');
+const MIN=6e4, H=36e5, D=864e5, GRACE_H=6;
+const INTERVAL={daily:D, weekly:7*D, monthly:31*D};
+const I=(n,c='')=>`<span class="mi ${c}" aria-hidden="true">${n}</span>`;
+
+/* ---------- sample data ---------- */
+function rng(seed){return function(){seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296;}}
+function hourly(seed,total,failRate,burst){const r=rng(seed),w=[];let sum=0;
+  for(let i=0;i<24;i++){const hod=(10+i+1)%24; const shape=(hod>=3&&hod<=14)?1.4:.55; w.push(shape*(.7+r()*.6)); sum+=w[i];}
+  return w.map((x,i)=>{const req=Math.round(total*x/sum); let fr=failRate*(.5+r()); if(burst&&i>=burst[0]&&i<=burst[1]) fr=burst[2]; return {req, fail:Math.min(req,Math.round(req*fr))};});}
+const HRMS_META={keka:{name:'Keka',color:'#7B4FD6'}, bamboohr:{name:'BambooHR',color:'#5F9E2F'}, darwinbox:{name:'Darwinbox',color:'#1F6FD1'}, greythr:{name:'greytHR',color:'#E2582B'}, zoho_people:{name:'Zoho People',color:'#D33B3B'}, sap_sf:{name:'SAP SuccessFactors',color:'#0A6ED1'}};
+const BENCH={keka:97.6, bamboohr:95.4, darwinbox:98.9, greythr:96.8, zoho_people:98.1, sap_sf:99.2};
+const ERR={
+  api500:{type:'API Error',desc:'Keka API returned 500',code:'500',msg:'received 500 from https://orchid.keka.com/api/v1/hris/employees'},
+  auth401:{type:'Authentication Error',desc:'Access token expired. Reconnect the HRMS to continue.',code:'401',msg:'invalid_token: the access token has expired'},
+  stuck:{type:'Sync Stuck',desc:'Running for 9h 12m, past the 6h limit',code:null,msg:'worker heartbeat lost at page 14 of 31 (employees)'},
+  map:{type:'Mapping Error',desc:"Required field 'department' is missing for all records",code:null,msg:"KeyError: 'department' in transform employees_v2"},
+  timeout:{type:'Timeout',desc:'Darwinbox did not respond within 120s',code:'504',msg:'ReadTimeout: HTTPSConnectionPool(host=coral.darwinbox.in) read timed out'},
+  sftpAuth:{type:'SFTP Authentication Error',desc:'Server rejected the key',code:null,msg:'Permission denied (publickey) for user kaveri_hr@sftp.kaveri.co.in'}};
+function c(id,corp,mode,freq,agoH,status,reason,extra){return Object.assign({id,corp,mode,freq,ago:agoH==null?null:agoH*H,status,reason:reason?ERR[reason]:null},extra||{});}
+function pt(id,corp,seed,total,failRate,p95,lastMin,errors,burst){
+  const hrs=total?hourly(seed,total,failRate,burst):Array.from({length:24},()=>({req:0,fail:0}));
+  const req=hrs.reduce((a,b)=>a+b.req,0), fail=hrs.reduce((a,b)=>a+b.fail,0);
+  const cnt=(errors||[]).filter(e=>e.code!=='400'), tot=cnt.reduce((a,e)=>a+e.n,0); if(tot){let left=fail; cnt.forEach((e,i)=>{e.n=i===cnt.length-1?left:Math.round(fail*e.n/tot); left-=e.n;});}
+  return {id,corp,mode:'pt',freq:null,ago:null,status:null,reason:null,pt:{hrs,req,ok:req-fail,p95,last:lastMin*MIN,errors:errors||[]}};}
+const PT={
+  halcyon:pt('a91c03de-77b1-4c0e-9d2e-1f4b6a0c8e11','Halcyon Foods',11,1842,.006,1.4,4,[{cat:'Upstream 5xx',code:'502',n:9,msg:'Bad gateway from api.keka.com'}]),
+  saffron:pt('5c2e8b10-3f7a-4b9e-a2d1-90e4c6f1b7a3','Saffron Hotels',23,410,.04,6.2,2,[{cat:'Rate Limited',code:'429',n:96,msg:'Too Many Requests: limit 50/min on /hris/employees'},{cat:'Timeout',code:'504',n:22,msg:'No response from Keka within 30s'}],[17,23,.55]),
+  zephyr:pt('d4b7e2a0-1c9f-4e3b-8a6d-2f0e9b5c7a14','Zephyr Airlines',37,5120,.013,2.3,1,[{cat:'Upstream 5xx',code:'503',n:41,msg:'Service Unavailable from zephyr.darwinbox.in'},{cat:'Invalid Request',code:'400',n:12,msg:"Unknown employee_id 'ZA-00x1' (your request, not counted)"}]),
+  meridian:pt('7e1f9a3c-5b2d-4c8e-b6a0-3d9f1e7c2b58','Meridian Steel',41,9410,.004,2.1,1,[{cat:'Upstream 5xx',code:'500',n:38,msg:'Internal Server Error from api.successfactors.com'}]),
+  atlas:pt('0b6c4e2f-8a1d-4f7b-9c3e-5a2d8f1b6e90','Atlas Mining',0,0,0,null,3*24*60+140,[])};
+const SCHEDULED={
+  keka:[c('f2a8c4e1-6b3d-4a9f-8e2c-7d1b5f0a3c96','Nimbus Logistics','db','daily',3,'success'),
+    c('e672f4a4-5a5a-4301-9c41-005120bb0650','Orchid Hospitals','db','daily',5,'fail','api500'),
+    c('3b9d1f7e-2c4a-4e8b-a6f0-9e3c5d7b1a24','Vistaar Textiles','db','daily',27,'fail','auth401'),
+    c('8c5e2a9d-7f1b-4d3c-b8e6-0a4f2c9e5d71','Pinewood Retail','db','daily',9.2,'stuck','stuck'),
+    c('1d7a3f5c-9e2b-4c6d-8f0a-b3e5d7c9a128','Kaveri Motors','db','weekly',28,'partial_success'),
+    c('6f0b8d2e-4a7c-4e1f-9b3d-c5a7e9f1b340','Lumen Analytics','db','daily',2,'success')],
+  bamboohr:[c('9a2e4c6f-1b3d-4f5a-8c7e-d9b1f3a5c762','Tidewater Ports','db','daily',7,'fail','map')],
+  darwinbox:[c('2c4e6a8d-0f1b-4d3e-a5c7-e9f1b3d5a780','Quarry Cement','db','daily',4,'success'),
+    c('4e6a8c0f-2b3d-4f5e-b7a9-f1d3b5e7c902','Indus Pharma','db','weekly',52,'success'),
+    c('5f7b9d1e-3c4e-4a6f-c8b0-a2e4c6f8d013','Monsoon Media','db','daily',6,'success'),
+    c('6a8c0e2f-4d5f-4b7a-d9c1-b3f5d7a9e124','Bluepeak Infra','db','daily',5,'partial_success'),
+    c('7b9d1f3a-5e6a-4c8b-e0d2-c4a6e8b0f235','Cedar Schools','db','monthly',190,'success'),
+    c('8c0e2a4b-6f7b-4d9c-f1e3-d5b7f9c1a346','Northstar BPO','db','daily',3,'success'),
+    c('9d1f3b5c-7a8c-4e0d-a2f4-e6c8a0d2b457','Aster Fintech','db','daily',2,'success'),
+    c('0e2a4c6d-8b9d-4f1e-b3a5-f7d9b1e3c568','Coral Shipping','db','daily',11,'fail','timeout'),
+    c('1f3b5d7e-9c0e-4a2f-c4b6-a8e0c2f4d679','Granite Realty','db','daily',0.3,'running')],
+  greythr:[c('2a4c6e8f-0d1f-4b3a-d5c7-b9f1d3a5e780','Ember Ceramics','db','daily',5,'success'),
+    c('3b5d7f9a-1e2a-4c4b-e6d8-c0a2e4b6f891','Falcon Security','db','daily',6,'success'),
+    c('4c6e8a0b-2f3b-4d5c-f7e9-d1b3f5c7a902','Juniper Clinics','db','weekly',40,'partial_success'),
+    c('5d7f9b1c-3a4c-4e6d-a8f0-e2c4a6d8b013','Marigold Events','db','daily',0.1,'running')],
+  zoho_people:[c('6e8a0c2d-4b5d-4f7e-b9a1-f3d5b7e9c124','Oakline Studios','db','daily',null,null,null,{connectedMin:22}),
+    c('7f9b1d3e-5c6e-4a8f-c0b2-a4e6c8f0d235','Peregrine Labs','db','daily',8,'success'),
+    c('8a0c2e4f-6d7f-4b9a-d1c3-b5f7d9a1e346','Quill Publishing','db','weekly',70,'success')]};
+const SFTP=[
+  c('32161d0c-d07e-45c4-b139-6b22e2eeada5','Nimbus Logistics','sftp','daily',14,'success'),
+  c('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d','Orchid Hospitals','sftp','daily',38,'success'),
+  c('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e','Kaveri Motors','sftp','weekly',72,'fail','sftpAuth'),
+  c('c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f','Indus Pharma','sftp','monthly',288,'success'),
+  c('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80','Juniper Clinics','sftp','daily',0.4,'running'),
+  c('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091','Cedar Schools','sftp','daily',null,null),
+  c('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8091a2','Granite Realty','sftp',null,216,'success')];
+
+let alerts={recipients:['ops@kredify.in','integrations@kredify.in'], def:80, over:{bamboohr:60}, sftpLate:true, ptAlerts:true, updated:Date.parse('2026-10-22T04:58:55Z')};
+const state={client:'mixed', track:'today', q:'', src:'hrms', status:'all', mode:'all', open:{}, more:{}, page:1};
+try{const s=localStorage.getItem('sh-src'); if(s==='hrms'||s==='sftp') state.src=s;}catch(e){}
+
+function dataset(){const out={}; const add=(k,a)=>{if(a.length)(out[k]=out[k]||[]).push(...a);};
+  if(state.client==='mixed') for(const k in SCHEDULED) add(k,SCHEDULED[k]);
+  add('keka',[PT.halcyon,PT.saffron]); add('darwinbox',[PT.zephyr]); add('sap_sf',[PT.meridian,PT.atlas]); return out;}
+const sftpSet=()=>state.client==='mixed'?SFTP:[];
+const thr=code=>alerts.over[code]!=null?alerts.over[code]:alerts.def;
+
+/* ---------- health rules ---------- */
+function health(x,code){
+  if(x.mode==='pt'){ if(state.track==='today') return 'not_tracked'; const p=x.pt; if(!p.req) return 'idle'; const r=p.ok/p.req*100;
+    if(r<50) return 'failing'; if(r<thr(code)||p.p95>5) return 'degraded'; return 'healthy'; }
+  return ({success:'healthy',partial_success:'healthy',fail:'failing',stuck:'stuck',running:'running'})[x.status]||'no_runs';}
+function sched(x){ if(!x.freq) return {key:'unknown'}; if(x.ago==null) return {key:'never'}; const due=NOW-x.ago+INTERVAL[x.freq]+GRACE_H*H; return due>=NOW?{key:'on_time',due}:{key:'late',due,by:NOW-due}; }
+const BUCKET={healthy:'healthy',failing:'attention',stuck:'attention',degraded:'attention',late:'attention',never:'attention',running:'running',no_runs:'idle',idle:'idle',not_tracked:'none',on_time:'none',unknown:'none'};
+function agg(code,conns){const db=conns.filter(x=>x.mode==='db'), p=conns.filter(x=>x.mode==='pt'); const k={healthy:0,failing:0,stuck:0,running:0,no_runs:0};
+  db.forEach(x=>k[health(x,code)]++); const fin=k.healthy+k.failing+k.stuck; const pct=fin?Math.round(k.healthy/fin*1000)/10:null;
+  let preq=0,pok=0; const ps={healthy:0,degraded:0,failing:0,idle:0}; p.forEach(x=>{preq+=x.pt.req; pok+=x.pt.ok; const h=health(x,code); if(ps[h]!=null) ps[h]++;});
+  const last=db.filter(x=>x.ago!=null).map(x=>x.ago).sort((a,b)=>a-b)[0];
+  return {code,conns,db,p,k,pct,below:pct!=null&&pct<thr(code),preq,prate:preq?pok/preq*100:null,ps,last};}
+
+/* ---------- format ---------- */
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const rel=ms=>ms<MIN?'just now':ms<H?Math.round(ms/MIN)+'m ago':ms<48*H?Math.round(ms/H)+'h ago':Math.round(ms/D)+'d ago';
+const dur=ms=>ms<H?Math.round(ms/MIN)+'m':ms<48*H?Math.round(ms/H)+'h':Math.round(ms/D)+'d';
+function abs(ts){const d=new Date(ts+5.5*H); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]; return d.getUTCDate()+' '+mo+', '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+' IST';}
+const fmtN=n=>n.toLocaleString('en-IN'); const pct1=v=>(Math.round(v*10)/10).toFixed(1)+'%';
+const FREQ={daily:'Daily',weekly:'Weekly',monthly:'Monthly'};
+const STATUS_TXT={success:'Success',partial_success:'Partial Sync',fail:'Failed',stuck:'Stuck',running:'Running'};
+
+const B={ // health → product badge
+  healthy:['ok','Healthy','The latest sync succeeded, or succeeded for most records (Partial Sync).'],
+  failing:['err','Failed','The latest sync failed. Data for this corporate is only as fresh as its last successful sync.'],
+  stuck:['warn','Stuck','The latest sync has run far longer than normal and stopped reporting progress. Counts as unhealthy.'],
+  running:['info','Running','A sync is in progress. Left out of health % until it finishes.'],
+  no_runs:['neu','Not Synced Yet',"Connected, but the first sync hasn't run. Left out of health %."],
+  not_tracked:['dash','Not Tracked',"Passthrough requests go straight from the HRMS to you and aren't logged by Tartan yet, so there's no health signal."],
+  degraded:['warn','Degraded','Live requests are succeeding less often than your threshold, or are slow (p95 above 5s).'],
+  idle:['neu','Idle','No live requests in the last 24 hours, so there is nothing to measure.'],
+  on_time:['ok','On Time','The latest sync started within one schedule interval plus a 6-hour grace period.'],
+  late:['warn','Late','No sync has started since the expected time (schedule interval + 6-hour grace period).'],
+  never:['neu','Never Synced','Active, but no file has been synced yet.'],
+  unknown:['neu','No Schedule',"Neither this connection nor your organisation has a sync frequency, so we can't tell if it's on time."]};
+const badge=(k,label,tip)=>{const b=B[k]; return `<span class="badge ${b[0]}" data-tip="${esc(tip||b[2])}"><span class="dot"></span>${label||b[1]}</span>`;};
+
+function spark(hrs,w,h){const max=Math.max(1,...hrs.map(x=>x.req)), bw=w/hrs.length;
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${hrs.map((x,i)=>{const th=Math.max(x.req?1.5:0,x.req/max*h), fh=x.req?x.fail/x.req*th:0, X=(i*bw+.5).toFixed(1), W=(bw-1).toFixed(1);
+    return `<rect x="${X}" y="${(h-th).toFixed(1)}" width="${W}" height="${(th-fh).toFixed(1)}" fill="var(--ok-bar)" opacity=".7"/>`+(fh>.4?`<rect x="${X}" y="${(h-fh).toFixed(1)}" width="${W}" height="${fh.toFixed(1)}" fill="var(--err-bar)"/>`:'');}).join('')}</svg>`;}
+
+/* ---------- filters ---------- */
+const DD={
+  status:{opts:[['all','All Status'],['attention','Needs Attention'],['healthy','Healthy'],['running','Running'],['idle','Not Synced Yet / Idle']]},
+  mode:{opts:[['all','All Sync Modes'],['db','Scheduled'],['pt','Passthrough']]}};
+function drawDD(){document.querySelectorAll('.dd').forEach(el=>{const k=el.dataset.key, cur=state[k], open=el.dataset.open==='true';
+  el.hidden = k==='mode' && state.src==='sftp';
+  const lbl=DD[k].opts.find(o=>o[0]===cur)[1];
+  el.innerHTML=`<button class="dd-btn ${cur!=='all'?'set':''}" type="button" aria-haspopup="listbox" aria-expanded="${open}">${lbl}${I('expand_more')}</button>`+
+   (open?`<div class="dd-menu" role="listbox">${DD[k].opts.map(([v,l])=>`<button class="dd-item" type="button" role="option" data-v="${v}" aria-selected="${v===cur}">${l}${I('check')}</button>`).join('')}</div>`:'');});}
+document.addEventListener('click',e=>{
+  const ddBtn=e.target.closest('.dd-btn'), item=e.target.closest('.dd-item');
+  if(item){const el=item.closest('.dd'); state[el.dataset.key]=item.dataset.v; el.dataset.open='false'; state.open={}; state.page=1; render(); return;}
+  document.querySelectorAll('.dd').forEach(el=>{ if(!ddBtn||el!==ddBtn.closest('.dd')) el.dataset.open='false'; });
+  if(ddBtn){const el=ddBtn.closest('.dd'); el.dataset.open=el.dataset.open==='true'?'false':'true'; drawDD(); return;}
+  drawDD();
+},true);
+function match(x,code,kind){const q=state.q.trim().toLowerCase();
+  if(q&&!(x.corp.toLowerCase().includes(q)||x.id.includes(q)||(code&&HRMS_META[code].name.toLowerCase().includes(q)))) return false;
+  if(kind==='hrms'&&state.mode!=='all'&&x.mode!==state.mode) return false;
+  if(state.status!=='all'){const keys=kind==='sftp'?[health(x),sched(x).key]:[health(x,code)]; if(!keys.some(k=>BUCKET[k]===state.status)) return false;}
+  return true;}
+const filtering=()=>state.q.trim()||state.status!=='all'||(state.src==='hrms'&&state.mode!=='all');
+function setSrc(s){ if(state.src===s) return; state.src=s; state.page=1; state.open={}; if(s==='sftp') state.mode='all'; try{localStorage.setItem('sh-src',s);}catch(e){} render(); }
+
+/* ---------- counts shared by stat cards and tabs ---------- */
+function totals(aggs){
+  const all=Object.values(aggs); const k={healthy:0,failing:0,stuck:0}; all.forEach(a=>{k.healthy+=a.k.healthy;k.failing+=a.k.failing;k.stuck+=a.k.stuck;});
+  const sf=sftpSet(), sk={on_time:0,late:0,never:0,unknown:0}; sf.forEach(x=>sk[sched(x).key]++);
+  const sfIssues=sf.filter(x=>['failing','stuck'].includes(health(x))||['late','never'].includes(sched(x).key)).length;
+  const pts=all.flatMap(a=>a.p.map(x=>({x,code:a.code}))); let preq=0,pok=0,pAttn=0; pts.forEach(({x,code})=>{preq+=x.pt.req; pok+=x.pt.ok; if(['failing','degraded'].includes(health(x,code))) pAttn++;});
+  const hrmsIssues=k.failing+k.stuck+(state.track==='proposed'?pAttn:0);
+  return {all,k,sf,sk,sfIssues,pts,preq,pok,pAttn,hrmsIssues, hrmsConns:all.reduce((s,a)=>s+a.conns.length,0)};
+}
+
+/* ---------- stat cards ---------- */
+function renderStats(T){
+  const {all,k,sf,sk,pts,preq,pok,pAttn}=T;
+  const fin=k.healthy+k.failing+k.stuck, pct=fin?Math.round(k.healthy/fin*1000)/10:null, below=all.filter(a=>a.below).length, hasDb=all.some(a=>a.db.length);
+  const sfFail=sf.filter(x=>['failing','stuck'].includes(health(x))).length;
+  const attn=k.failing+k.stuck+sk.late+sk.never+sfFail+(state.track==='proposed'?pAttn:0);
+  const parts=[k.failing&&`${k.failing} HRMS failed`,k.stuck&&`${k.stuck} HRMS stuck`,sfFail&&`${sfFail} SFTP failed`,sk.late&&`${sk.late} SFTP late`,sk.never&&`${sk.never} SFTP never synced`,state.track==='proposed'&&pAttn&&`${pAttn} passthrough degraded`].filter(Boolean);
+  const codes=[...new Set(pts.map(p=>p.code))]; const bench=codes.length?codes.reduce((s,c)=>s+BENCH[c],0)/codes.length:null;
+  const measurable=hasDb||sf.length||state.track==='proposed';
+  const t1=`<button class="stat ${state.src==='hrms'&&state.mode==='all'&&state.status==='all'?'':''}" type="button" data-go="hrms"><div><div class="stat-l">HRMS Health <span class="help" data-tip="Across HRMS connections that sync on a schedule. Health % = healthy ÷ (healthy + failed + stuck) latest syncs.">${I('help')}</span></div>
+    <div class="stat-v num ${pct!=null&&pct<alerts.def?'t-err':''}">${pct!=null?pct.toFixed(1)+'%':'—'} <small>of ${fin} finished syncs</small></div>
+    <div class="stat-s">${below?`<span class="t-err">${below} of ${all.filter(a=>a.pct!=null).length} HRMS below threshold</span>`:'Every HRMS at or above threshold'}</div></div><span class="ibox">${I('monitor_heart')}</span></button>`;
+  const t2=!measurable?`<div class="stat"><div><div class="stat-l">Needs Attention</div><div class="stat-v t-muted">—</div><div class="stat-s">Can't be measured until passthrough is tracked</div></div><span class="ibox">${I('warning')}</span></div>`
+   :`<button class="stat ${state.status==='attention'?'on':''}" type="button" data-go="attention" ${parts.length?`data-tip="${esc(parts.join(' · '))}. Click to show only these."`:''}><div><div class="stat-l">Needs Attention</div>
+    <div class="stat-v num ${attn?'t-err':'t-ok'}">${attn} <small>${attn===1?'connection':'connections'}</small></div>
+    <div class="stat-s">${attn?(state.status==='attention'?'Showing these only · click to clear':'Failed, stuck, late or degraded'):'Nothing needs action'}</div></div><span class="ibox">${I('warning')}</span></button>`;
+  const t3=`<button class="stat" type="button" data-go="sftp"><div><div class="stat-l">SFTP On Schedule <span class="help" data-tip="The latest file sync started within one interval (daily, weekly or monthly) plus a 6-hour grace period.">${I('help')}</span></div>
+    <div class="stat-v num">${sk.on_time} <small>of ${sf.length} connections</small></div>
+    <div class="stat-s">${[sk.late&&`<span class="t-warn">${sk.late} late</span>`,sk.never&&`${sk.never} never synced`,sk.unknown&&`${sk.unknown} no schedule`].filter(Boolean).join(' · ')||'All on time'}</div></div><span class="ibox">${I('schedule')}</span></button>`;
+  const t4=state.track==='today'
+   ?`<button class="stat" type="button" data-go="pt"><div><div class="stat-l">Passthrough <span class="help" data-tip="Passthrough requests aren't logged by Tartan yet. As a reference, this is how these HRMSs performed across all Tartan clients over the last 7 days.">${I('help')}</span></div>
+    <div class="stat-v num">${pts.length} <small>connections · not tracked</small></div><div class="stat-s">Network average${bench!=null?` <b class="num" style="color:var(--grey-700)">${pct1(bench)}</b>`:''} (7d)</div></div><span class="ibox">${I('bolt')}</span></button>`
+   :`<button class="stat" type="button" data-go="pt"><div><div class="stat-l">Live Request Success · 24h <span class="help" data-tip="Share of passthrough requests in the last 24 hours where the HRMS responded and data was delivered. Requests rejected for invalid input from your side aren't counted.">${I('help')}</span></div>
+    <div class="stat-v num ${preq&&pok/preq*100<alerts.def?'t-err':''}">${preq?pct1(pok/preq*100):'—'} <small>${fmtN(preq)} requests</small></div>
+    <div class="stat-s">${pAttn?`<span class="t-warn">${pAttn} degraded</span> · `:''}${pts.filter(p=>!p.x.pt.req).length} idle · ${pts.length} connections</div></div><span class="ibox">${I('bolt')}</span></button>`;
+  const tiles=[hasDb&&t1,t2,sf.length&&t3,pts.length&&t4].filter(Boolean);
+  const el=document.getElementById('stats'); el.innerHTML=tiles.join(''); el.style.setProperty('--cols',tiles.length);
+}
+
+/* ---------- tabs ---------- */
+function renderTabs(T){
+  const tab=(s,label,count,issues,tip)=>`<button class="tab ${state.src===s?'on':''}" type="button" role="tab" aria-selected="${state.src===s}" data-src="${s}">${label}<span class="tcount num">${count}</span>${issues?`<span class="tissue num" data-tip="${esc(tip)}">${issues}</span>`:''}</button>`;
+  document.getElementById('tabs').innerHTML =
+    tab('hrms','HRMS',T.hrmsConns,T.hrmsIssues,`${T.hrmsIssues} HRMS ${T.hrmsIssues===1?'connection needs':'connections need'} attention`)+
+    (T.sf.length?tab('sftp','SFTP',T.sf.length,T.sfIssues,`${T.sfIssues} SFTP ${T.sfIssues===1?'connection needs':'connections need'} attention`):'');
+}
+
+/* ---------- shared table frame: same 6 columns on both tabs ---------- */
+const COLS=`<colgroup><col style="width:23%"><col style="width:19%"><col style="width:16%"><col style="width:11%"><col style="width:20%"><col style="width:11%"></colgroup>`;
+const PAGE=10;
+function pager(total,unit){
+  const pages=Math.max(1,Math.ceil(total/PAGE)); state.page=Math.min(state.page,pages);
+  const from=total?(state.page-1)*PAGE+1:0, to=Math.min(total,state.page*PAGE);
+  let nums=''; for(let i=1;i<=pages;i++) nums+=`<button class="pg ${i===state.page?'on':''}" type="button" data-page="${i}">${i}</button>`;
+  document.getElementById('pager').innerHTML=`<div class="pgs"><button class="pg" type="button" data-page="${state.page-1}" ${state.page===1?'disabled':''} aria-label="Previous page">${I('chevron_right','flip')}</button>${nums}<button class="pg" type="button" data-page="${state.page+1}" ${state.page===pages?'disabled':''} aria-label="Next page">${I('chevron_right')}</button></div><span>Showing ${from}–${to} of ${total} ${unit}</span>`;
+  return [from-1,to];
+}
+
+function hbar(pct,t,below,live){
+  return `<div class="hb" data-tip="${pct.toFixed(1)}% ${live?'of live requests succeeded (24h)':'of finished latest syncs are healthy'}. Alert threshold ${t}%${below?' (below threshold)':''}."><span class="hb-val num ${below?'t-err':''}">${pct.toFixed(1)}%</span><span class="hb-track"><span class="hb-fill ${below?'low':''}" style="width:${pct}%"></span><span class="hb-tick" style="left:${t}%"></span></span></div>`;}
+
+function hrmsHealthCell(a){
+  const M=HRMS_META[a.code];
+  if(a.db.length){
+    let line='';
+    if(a.p.length) line = state.track==='today'
+      ? `<span class="sub" data-tip="Passthrough requests aren't logged yet. ${M.name} succeeded ${BENCH[a.code]}% of the time across all Tartan clients (7d).">+ ${a.p.length} passthrough not tracked</span>`
+      : (a.preq?`<span class="sub ${a.prate<thr(a.code)?'t-err':''}">Live ${pct1(a.prate)} · ${fmtN(a.preq)} requests</span>`:`<span class="sub">Live: idle</span>`);
+    return hbar(a.pct??0,thr(a.code),a.below)+line;
+  }
+  if(state.track==='today') return `${badge('not_tracked')}<span class="sub" style="margin-top:4px" data-tip="Success rate of ${M.name} syncs across all Tartan clients over the last 7 days. A reference point, not your own data.">Network avg ${BENCH[a.code]}%</span>`;
+  return a.preq? hbar(a.prate,thr(a.code),a.prate<thr(a.code),true)+`<span class="sub">Live requests · 24h</span>` : badge('idle');
+}
+
+function childRow(x,code){
+  const h=health(x,code); let healthCell=badge(h), setup, when, issue='<span class="t-muted">—</span>', action;
+  if(x.mode==='pt'){
+    setup=`<span class="mode pt" data-tip="Passthrough: data is fetched from the HRMS and sent to you live. Tartan stores none of it.">${I('bolt')}Passthrough</span>`;
+    if(state.track==='today'){ when='<span class="t-muted">—</span>'; issue=`<span class="t-muted" data-tip="${HRMS_META[code].name} network average across all Tartan clients: ${BENCH[code]}% (7d)">Not logged yet</span>`; action=''; }
+    else { const p=x.pt; when=`<span class="when" data-tip="${esc(abs(NOW-p.last))}">${rel(p.last)}<span class="sub">last request</span></span>`;
+      if(p.req){ healthCell+=`<span class="sub num" style="margin-top:4px">${pct1(p.ok/p.req*100)} of ${fmtN(p.req)} · 24h</span>`;
+        if(h!=='healthy'&&p.errors[0]) issue=`<div class="reason" data-tip="${esc(p.errors[0].msg)}"><b>${esc(p.errors[0].cat)} · ${p.errors[0].code}</b><div class="msg">${p.errors[0].n} failed requests${p.p95>5?` · p95 ${p.p95}s`:''}</div></div>`;
+        action=`<button class="link" type="button" data-req="${x.id}" data-code="${code}">Requests ${I('chevron_right','xs')}</button>`;
+      } else { issue='<span class="t-muted">No requests in 24h</span>'; action=''; } }
+  } else {
+    setup=`<span class="mode" data-tip="Scheduled: Tartan syncs on a schedule and stores the data to compute changes.">${FREQ[x.freq]}</span>`;
+    when=x.ago==null?`<span class="when t-muted">${x.connectedMin?`Connected ${x.connectedMin}m ago`:'—'}</span>`:`<span class="when" data-tip="Started ${esc(abs(NOW-x.ago))}">${rel(x.ago)}<span class="sub">${STATUS_TXT[x.status]}</span></span>`;
+    if(x.reason) issue=`<div class="reason" data-tip="${esc(x.reason.msg)}"><b>${esc(x.reason.type)}${x.reason.code?' · '+x.reason.code:''}</b><div class="msg">${esc(x.reason.desc)}</div></div>`;
+    action=`<button class="link" type="button" data-logs="${code}" data-corp="${esc(x.corp)}">Sync Logs ${I('open_in_new','xs')}</button>`;
+  }
+  return `<tr class="child"><td><div class="name">${esc(x.corp)}</div><button class="cid" type="button" data-copy="${x.id}" data-tip="Copy connection ID ${x.id}"><span class="mono">${x.id.slice(0,8)}</span>${I('content_copy')}</button></td>
+    <td>${healthCell}</td><td>${setup}</td><td>${when}</td><td>${issue}</td><td class="r">${action}</td></tr>`;
+}
+
+const CHILD_CAP=5;
+function renderHrms(aggs){
+  const list=Object.values(aggs).sort((a,b)=>(b.below-a.below)||((a.pct==null)-(b.pct==null))||((a.pct??0)-(b.pct??0))||(state.track==='proposed'?((a.prate??101)-(b.prate??101)):0)||HRMS_META[a.code].name.localeCompare(HRMS_META[b.code].name));
+  const f=filtering(), ptOnly=list.every(a=>!a.db.length);
+  const groups=list.map(a=>({a,conns:a.conns.filter(x=>match(x,a.code,'hrms')).sort((p,q)=>{const r={failing:0,stuck:1,degraded:2,running:3,no_runs:4,idle:4,healthy:5,not_tracked:6}; return r[health(p,a.code)]-r[health(q,a.code)]||p.corp.localeCompare(q.corp);})})).filter(g=>g.conns.length);
+  const [s,e]=pager(groups.length,'HRMS');
+  let rows='';
+  groups.slice(s,e).forEach(({a,conns},i)=>{
+    const open=state.open[a.code]??(f?true:false), M=HRMS_META[a.code];
+    const issues=[a.k.failing&&`<span class="t-err">${a.k.failing} failed</span>`,a.k.stuck&&`<span class="t-warn">${a.k.stuck} stuck</span>`,state.track==='proposed'&&a.ps.degraded&&`<span class="t-warn">${a.ps.degraded} degraded</span>`,state.track==='proposed'&&a.ps.failing&&`<span class="t-err">${a.ps.failing} live failing</span>`].filter(Boolean);
+    const issueTxt=issues.length?issues.join(' · '):((a.db.length||state.track==='proposed')?'<span class="t-ok">All clear</span>':'<span class="t-muted" data-tip="Passthrough isn\'t tracked yet, so issues can\'t be detected.">—</span>');
+    rows+=`<tr class="row ${i%2?'z':''} ${open?'open':''}" data-code="${a.code}" tabindex="0" aria-expanded="${open}">
+      <td><div class="hrms">${I('chevron_right','chev')}<span class="name">${M.name}</span>${a.below?`<span class="badge err sm" data-tip="Health % is under this HRMS's alert threshold (${thr(a.code)}%). Alert recipients are emailed, with a reminder every 24h.">Below ${thr(a.code)}%</span>`:''}</div></td>
+      <td>${hrmsHealthCell(a)}</td>
+      <td><span class="strong num">${a.conns.length} ${a.conns.length===1?'connection':'connections'}</span><span class="sub">${[a.db.length&&`${a.db.length} scheduled`,a.p.length&&`${a.p.length} passthrough`].filter(Boolean).join(' · ')}</span></td>
+      <td>${a.last!=null?`<span class="when" data-tip="${esc(abs(NOW-a.last))}">${rel(a.last)}</span>`:'<span class="t-muted">—</span>'}</td>
+      <td class="attn">${issueTxt}</td>
+      <td class="r">${a.db.length?`<button class="link" type="button" data-logs="${a.code}" data-tip="Open Sync Logs filtered to ${M.name}">Sync Logs ${I('open_in_new','xs')}</button>`:''}</td></tr>`;
+    if(open){
+      const all=state.more[a.code], shown=all?conns:conns.slice(0,CHILD_CAP), rest=conns.length-shown.length, hid=a.conns.length-conns.length;
+      rows+=shown.map(x=>childRow(x,a.code)).join('');
+      if(rest>0||hid>0) rows+=`<tr class="child foot"><td colspan="6">${rest>0?`<button class="link" type="button" data-more="${a.code}">Show ${rest} more ${M.name} ${rest===1?'connection':'connections'}</button>`:''}${hid?`<span class="t-muted">${hid} hidden by filters</span>`:''}</td></tr>`;
+    }
+  });
+  const head=`<thead><tr><th>HRMS</th><th>Health <span class="help" data-tip="Health % of scheduled syncs. The faint tick marks the alert threshold.">${I('help')}</span></th><th>Connections</th><th>Last Sync</th><th>Issues</th><th></th></tr></thead>`;
+  document.getElementById('mainTbl').innerHTML=COLS+head+`<tbody>${rows||`<tr><td colspan="6"><div class="empty"><b>No HRMS connections match these filters</b>Try a different status or clear the search.</div></td></tr>`}</tbody>`;
+  let callout='';
+  if(state.track==='today'&&list.some(a=>a.p.length)) callout=ptOnly
+    ?`<div class="callout">${I('info')}<div><b>Your connections use passthrough, so there are no stored syncs to measure</b>Tartan doesn't log passthrough requests yet. Until it does, each HRMS shows its success rate across all Tartan clients over the last 7 days.</div></div>`
+    :`<div class="callout">${I('info')}<div><b>Health % covers scheduled connections only</b>Passthrough connections aren't logged by Tartan yet. Hover "passthrough not tracked" to see that HRMS's network-wide success rate.</div></div>`;
+  document.getElementById('callout').innerHTML=callout;
+}
+
+/* ---------- SFTP ---------- */
+function renderSftp(){
+  const sf=sftpSet(); document.getElementById('callout').innerHTML='';
+  const ord={late:0,never:1,on_time:2,unknown:3}; const bad=x=>['failing','stuck'].includes(health(x))?-1:0;
+  const rows=sf.filter(x=>match(x,null,'sftp')).sort((a,b)=>(ord[sched(a).key]+bad(a))-(ord[sched(b).key]+bad(b))||a.corp.localeCompare(b.corp));
+  const [s,e]=pager(rows.length,'connections');
+  const body=rows.slice(s,e).map((x,i)=>{
+    const sc=sched(x), h=health(x);
+    const healthCell=x.ago==null?badge('never'):badge(h,h==='healthy'?STATUS_TXT[x.status]:null);
+    const setup=x.freq?`<span class="mode">${FREQ[x.freq]}</span><span class="sub" style="margin-top:4px" data-tip="${esc(B[sc.key][2])}">${sc.due?`Due by ${abs(sc.due).replace(' IST','')}`:'Due after first sync'}</span>`
+      :`<span class="t-muted" data-tip="${esc(B.unknown[2])}">No schedule</span>`;
+    const issues=[];
+    if(sc.key==='late') issues.push(`<b class="t-warn" data-tip="Expected by ${esc(abs(sc.due))}. ${esc(B.late[2])}">Late by ${dur(sc.by)}</b>`);
+    if(x.reason) issues.push(`<div class="reason" data-tip="${esc(x.reason.msg)}"><b>${esc(x.reason.type)}</b><div class="msg">${esc(x.reason.desc)}</div></div>`);
+    if(sc.key==='never') issues.push(`<span data-tip="${esc(B.never[2])}">No file synced yet</span>`);
+    if(sc.key==='unknown') issues.push(`<span class="t-muted">Set a frequency to track timing</span>`);
+    return `<tr class="${i%2?'z':''}"><td><div class="name">${esc(x.corp)}</div><button class="cid" type="button" data-copy="${x.id}" data-tip="Copy connection ID ${x.id}"><span class="mono">${x.id.slice(0,8)}</span>${I('content_copy')}</button></td>
+      <td>${healthCell}</td><td>${setup}</td>
+      <td>${x.ago==null?'<span class="t-muted">Never</span>':`<span class="when" data-tip="Started ${esc(abs(NOW-x.ago))}">${rel(x.ago)}</span>`}</td>
+      <td class="attn">${issues.join('')||'<span class="t-ok">All clear</span>'}</td>
+      <td class="r"><button class="link" type="button" data-logs="sftp" data-corp="${esc(x.corp)}">Sync Logs ${I('open_in_new','xs')}</button></td></tr>`;}).join('');
+  const head=`<thead><tr><th>Corporate</th><th>Health <span class="help" data-tip="Result of the latest file sync.">${I('help')}</span></th><th>Schedule <span class="help" data-tip="A sync is due within one interval plus a 6-hour grace period after the last one started.">${I('help')}</span></th><th>Last Sync</th><th>Issues</th><th></th></tr></thead>`;
+  document.getElementById('mainTbl').innerHTML=COLS+head+`<tbody>${body||`<tr><td colspan="6"><div class="empty"><b>${sf.length?'No SFTP connections match these filters':'No SFTP connections'}</b>${sf.length?'Try a different status or clear the search.':'File-based syncs you set up will appear here.'}</div></td></tr>`}</tbody>`;
+}
+
+function render(){
+  const ds=dataset(), aggs={}; for(const k in ds) aggs[k]=agg(k,ds[k]);
+  if(state.src==='sftp'&&!sftpSet().length) state.src='hrms';
+  const T=totals(aggs);
+  renderStats(T); renderTabs(T); (state.src==='hrms'?renderHrms(aggs):renderSftp()); drawDD();
+  document.getElementById('q').placeholder = state.src==='hrms'?'Search HRMS, corporate or connection ID':'Search corporate or connection ID';
+  document.getElementById('clearF').hidden=!filtering();
+  document.getElementById('recipCount').textContent=alerts.recipients.length||'Off';
+}
+
+/* ---------- interactions ---------- */
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value; state.open={}; state.page=1; render();});
+document.getElementById('clearF').addEventListener('click',()=>{Object.assign(state,{q:'',status:'all',mode:'all',open:{},page:1}); document.getElementById('q').value=''; render();});
+document.getElementById('refresh').addEventListener('click',()=>{const u=document.getElementById('updated'); u.textContent='Refreshing…'; setTimeout(()=>{u.textContent='Updated just now'; toast('Sync health refreshed');},500);});
+document.addEventListener('click',e=>{
+  const tabB=e.target.closest('.tab'), go=e.target.closest('[data-go]'), pg=e.target.closest('[data-page]'), more=e.target.closest('[data-more]');
+  if(tabB){setSrc(tabB.dataset.src); return;}
+  if(go){const g=go.dataset.go; if(g==='attention'){state.status=state.status==='attention'?'all':'attention'; state.open={}; state.page=1; render();} else if(g==='pt'){state.mode='pt'; state.status='all'; state.src='sftp'===state.src?'hrms':state.src; state.open={}; state.page=1; render();} else {if(state.src===g) return; setSrc(g);} document.getElementById('tabs').scrollIntoView({behavior:'smooth',block:'start'}); return;}
+  if(pg){if(pg.disabled) return; state.page=+pg.dataset.page; render(); return;}
+  if(more){state.more[more.dataset.more]=true; render(); return;}
+  const logs=e.target.closest('[data-logs]'), copy=e.target.closest('[data-copy]'), req=e.target.closest('[data-req]'), row=e.target.closest('tr.row');
+  if(logs){const k=logs.dataset.logs, who=logs.dataset.corp; toast(k==='sftp'?`Opens Sync Logs for ${who} (SFTP)`:who?`Opens Sync Logs for ${who} on ${HRMS_META[k].name}`:`Opens Sync Logs filtered to ${HRMS_META[k].name}`); return;}
+  if(copy){const id=copy.dataset.copy; try{navigator.clipboard.writeText(id).then(()=>toast('Connection ID copied'),()=>toast(id));}catch(err){toast(id);} return;}
+  if(req){openRequests(req.dataset.req,req.dataset.code); return;}
+  if(row){state.open[row.dataset.code]=row.getAttribute('aria-expanded')!=='true'; render();}
+});
+document.addEventListener('keydown',e=>{const row=e.target.closest&&e.target.closest('tr.row'); if(row&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); row.click();} if(e.key==='Escape'){closeDrawer(); document.querySelectorAll('.dd').forEach(d=>d.dataset.open='false'); drawDD();}});
+
+const tip=document.getElementById('tip'); let tipEl=null;
+function showTip(el){const t=el.getAttribute('data-tip'); if(!t) return; tipEl=el; tip.textContent=t; tip.classList.add('show'); const r=el.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight; let x=Math.max(8,Math.min(r.left+r.width/2-tw/2,innerWidth-tw-8)); let y=r.top-th-8; if(y<8) y=r.bottom+8; tip.style.left=x+'px'; tip.style.top=y+'px';}
+function hideTip(){tip.classList.remove('show'); tipEl=null;}
+document.addEventListener('mouseover',e=>{const el=e.target.closest('[data-tip]'); if(el&&el!==tipEl) showTip(el); else if(!el) hideTip();});
+document.addEventListener('mouseout',e=>{if(tipEl&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('[data-tip]'))) hideTip();});
+document.addEventListener('focusin',e=>{const el=e.target.closest('[data-tip]'); if(el) showTip(el);});
+document.addEventListener('focusout',hideTip); addEventListener('scroll',hideTip,true);
+let tT; function toast(m){const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=m; t.classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('show'),2400);}
+
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim'); let lastFocus=null;
+function openDrawer(title,sub,body,foot){lastFocus=document.activeElement; document.getElementById('dTitle').textContent=title; document.getElementById('dSub').textContent=sub; document.getElementById('dBody').innerHTML=body; document.getElementById('dFoot').innerHTML=foot||''; scrim.hidden=false; drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); setTimeout(()=>document.getElementById('dClose').focus(),50);}
+function closeDrawer(){if(!drawer.classList.contains('open')) return; drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); scrim.hidden=true; hideTip(); lastFocus&&lastFocus.focus&&lastFocus.focus();}
+scrim.onclick=closeDrawer; document.getElementById('dClose').onclick=closeDrawer;
+
+/* alert settings */
+function openAlerts(){
+  const d={recipients:[...alerts.recipients],def:alerts.def};
+  const ds=dataset(), codes=Object.keys(ds).sort((a,b)=>HRMS_META[a].name.localeCompare(HRMS_META[b].name)), aggs={}; codes.forEach(c=>aggs[c]=agg(c,ds[c]));
+  const body=`
+    <div class="field"><label class="f-label" for="recipIn">Who gets alerts</label>
+      <div class="chipbox" id="chipbox"><input id="recipIn" type="email" placeholder="name@company.com, press Enter" autocomplete="off"></div>
+      <p class="hint">Everyone here is on one email. Remove all addresses to turn alerts off.</p><p class="err-msg" id="recipErr" hidden></p></div>
+    <div class="field"><label class="f-label" for="defRange">Default health threshold</label>
+      <div class="thr"><input type="range" id="defRange" min="0" max="100" step="5" value="${d.def}" aria-label="Default threshold"><input class="numbox num" id="defNum" type="number" min="0" max="100" value="${d.def}" aria-label="Default threshold percent"><span>%</span></div>
+      <p class="hint">We alert when an HRMS's health % drops below this. Equal to it is fine.</p></div>
+    <div class="field"><span class="f-label">Per-HRMS thresholds</span>
+      <div class="list">${codes.map(c=>{const a=aggs[c],M=HRMS_META[c]; return `<div class="li"><span class="n">${M.name}</span><span class="now num">${a.pct!=null?'Now '+a.pct.toFixed(1)+'%':'No scheduled'}</span><input class="numbox num" type="number" min="0" max="100" data-ov="${c}" placeholder="Default" value="${alerts.over[c]??''}" aria-label="${M.name} threshold"></div>`;}).join('')}</div>
+      <p class="hint">Leave blank to use the default (<span id="defEcho">${d.def}</span>%).</p></div>
+    <div class="field"><span class="f-label">When we email</span>
+      <div class="list"><div class="rule"><b>Breach</b><span>An HRMS drops below its threshold. Lists the failed and stuck connections with reasons.</span></div><div class="rule"><b>Reminder</b><span>Every 24 hours while it stays below.</span></div><div class="rule"><b>Recovered</b><span>Once, when it's back at or above the threshold.</span></div></div>
+      <p class="hint">Checked every hour, so an alert can arrive up to an hour after health drops.</p></div>
+    <div class="field"><span class="f-label">Also alert me when</span>
+      <div class="list"><label class="tg"><span><b>An SFTP sync is late</b> <span class="new-pill">New</span><p class="hint">No file sync started within its schedule plus 6 hours.</p></span><span class="switch"><input type="checkbox" id="swSftp" ${alerts.sftpLate?'checked':''}><span></span></span></label>
+      ${state.track==='proposed'?`<label class="tg"><span><b>Live request success drops</b> <span class="new-pill">New</span><p class="hint">Passthrough success over 24h falls below the HRMS threshold. Needs at least 20 requests, so quiet connections don't trigger it.</p></span><span class="switch"><input type="checkbox" id="swPt" ${alerts.ptAlerts?'checked':''}><span></span></span></label>`:''}</div></div>`;
+  openDrawer('Alert Settings','Email people when an HRMS falls below its health threshold',body,`<span class="hint">Last saved ${abs(alerts.updated)}</span><div style="display:flex;gap:12px"><button class="btn grey" type="button" id="cancelA">Cancel</button><button class="btn primary" type="button" id="saveA">Save</button></div>`);
+  const box=document.getElementById('chipbox'), inp=document.getElementById('recipIn'), err=document.getElementById('recipErr');
+  const chips=()=>{box.querySelectorAll('.echip').forEach(n=>n.remove()); d.recipients.forEach((r,i)=>{const s=document.createElement('span'); s.className='echip'; s.innerHTML=`${esc(r)}<button type="button" aria-label="Remove ${esc(r)}">${I('close')}</button>`; s.querySelector('button').onclick=()=>{d.recipients.splice(i,1); chips();}; box.insertBefore(s,inp);});};
+  const add=()=>{const v=inp.value.split(/[,\s;]+/).map(s=>s.trim().toLowerCase()).filter(Boolean); if(!v.length) return true;
+    const badE=v.find(s=>!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)); if(badE){err.hidden=false; err.textContent=`"${badE}" isn't a valid email address.`; return false;}
+    if(d.recipients.length+v.length>50){err.hidden=false; err.textContent='You can add up to 50 recipients.'; return false;}
+    v.forEach(s=>{if(!d.recipients.includes(s)) d.recipients.push(s);}); inp.value=''; err.hidden=true; chips(); return true;};
+  box.onclick=()=>inp.focus(); inp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault(); add();} if(e.key==='Backspace'&&!inp.value&&d.recipients.length){d.recipients.pop(); chips();}}); inp.addEventListener('blur',add); chips();
+  const rg=document.getElementById('defRange'), nb=document.getElementById('defNum'); const setDef=v=>{v=Math.max(0,Math.min(100,Math.round(+v||0))); d.def=v; rg.value=v; nb.value=v; document.getElementById('defEcho').textContent=v;};
+  rg.oninput=e=>setDef(e.target.value); nb.onchange=e=>setDef(e.target.value);
+  document.getElementById('cancelA').onclick=closeDrawer;
+  document.getElementById('saveA').onclick=()=>{ if(!add()) return; const over={}; let bad=null;
+    document.querySelectorAll('[data-ov]').forEach(i=>{if(i.value==='') return; const v=+i.value; if(!(v>=0&&v<=100)) bad=i; else over[i.dataset.ov]=Math.round(v);});
+    if(bad){bad.focus(); toast('Thresholds must be between 0 and 100'); return;}
+    const sp=document.getElementById('swPt');
+    alerts={recipients:d.recipients,def:d.def,over,sftpLate:document.getElementById('swSftp').checked,ptAlerts:sp?sp.checked:alerts.ptAlerts,updated:NOW};
+    closeDrawer(); render(); toast(alerts.recipients.length?`Alert settings saved · ${alerts.recipients.length} ${alerts.recipients.length===1?'recipient':'recipients'}`:'Alert settings saved · alerts are off');};
+}
+document.getElementById('openAlerts').onclick=openAlerts;
+
+/* passthrough request detail (proposed) */
+function openRequests(id,code){
+  const x=Object.values(PT).find(p=>p.id===id), p=x.pt, h=health(x,code);
+  const W=440,Hh=120,padL=30,padB=20, max=Math.max(1,...p.hrs.map(b=>b.req)), nice=Math.ceil(max/50)*50||50, bw=(W-padL)/24, ch=Hh-padB;
+  const bars=p.hrs.map((b,i)=>{const th=b.req/nice*ch, fh=b.req?b.fail/b.req*th:0, X=(padL+i*bw+1).toFixed(1), Wd=(bw-2).toFixed(1);
+    return `<rect x="${X}" y="${(ch-th).toFixed(1)}" width="${Wd}" height="${(th-fh).toFixed(1)}" fill="var(--ok-bar)" opacity=".75"><title>${b.req} requests, ${b.fail} failed</title></rect>`+(fh>0?`<rect x="${X}" y="${(ch-fh).toFixed(1)}" width="${Wd}" height="${fh.toFixed(1)}" fill="var(--err-bar)"/>`:'');}).join('');
+  const grid=[0,.5,1].map(f=>`<line x1="${padL}" x2="${W}" y1="${(ch-f*ch).toFixed(1)}" y2="${(ch-f*ch).toFixed(1)}" stroke="var(--row-border)"/><text x="${padL-6}" y="${(ch-f*ch+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--grey-500)">${Math.round(nice*f)}</text>`).join('');
+  const xl=[[0,'24h ago','start'],[12,'12h ago','middle'],[24,'Now','end']].map(([i,l,a])=>`<text x="${(padL+i*bw).toFixed(1)}" y="${Hh-5}" text-anchor="${a}" font-size="10" fill="var(--grey-500)">${l}</text>`).join('');
+  const models=[['Employees',.68,1,.9],['Salary',.22,1.3,1.2],['Attendance',.10,.8,.9]].map(([m,s,lat,fw])=>{const r=Math.round(p.req*s), f=Math.round((p.req-p.ok)*s*fw); return {m,r,ok:r?Math.max(0,r-f)/r*100:0,p95:(p.p95*lat).toFixed(1)};});
+  const r=rng(id.charCodeAt(0)*7), recent=[]; p.errors.forEach(e=>{for(let i=0;i<Math.min(3,e.n);i++) recent.push({t:NOW-Math.round(r()*20*H),e,model:['Employees','Salary','Attendance'][Math.floor(r()*2.2)],ms:e.code==='504'?30000:Math.round(300+r()*2000),rid:'req_'+Math.floor(r()*1e10).toString(36)});}); recent.sort((a,b)=>b.t-a.t);
+  const col=h==='healthy'?'t-ok':h==='degraded'?'t-warn':'t-err';
+  const body=`
+    <div class="kpis"><div class="kpi"><div class="l">Success</div><div class="v num ${col}">${pct1(p.ok/p.req*100)}</div></div><div class="kpi"><div class="l">Requests</div><div class="v num">${fmtN(p.req)}</div></div><div class="kpi"><div class="l">p95 Latency</div><div class="v num ${p.p95>5?'t-warn':''}">${p.p95}s</div></div><div class="kpi"><div class="l">Last Request</div><div class="v num">${rel(p.last)}</div></div></div>
+    <div><div class="h3">Requests per hour <span>Last 24h</span></div><div class="tbl" style="padding:10px 10px 4px"><svg width="100%" viewBox="0 0 ${W} ${Hh+10}" role="img" aria-label="Hourly passthrough requests, succeeded and failed"><g transform="translate(0,10)">${grid}${bars}${xl}</g></svg></div>
+      <div class="legend"><span><i style="background:var(--ok-bar)"></i>Succeeded</span><span><i style="background:var(--err-bar)"></i>Failed</span></div></div>
+    <div><div class="h3">By data type</div><div class="tbl"><table><thead><tr><th>Data</th><th>Requests</th><th>Success</th><th>p95</th></tr></thead><tbody>${models.map((m,i)=>`<tr class="${i%2?'z':''}"><td>${m.m}</td><td class="num">${fmtN(m.r)}</td><td class="num">${pct1(m.ok)}</td><td class="num">${m.p95}s</td></tr>`).join('')}</tbody></table></div></div>
+    <div><div class="h3">Why requests failed <span>${fmtN(p.req-p.ok)} failed</span></div><div class="tbl"><table><thead><tr><th>Reason</th><th>Code</th><th>Count</th><th>Example</th></tr></thead><tbody>${p.errors.map((e,i)=>`<tr class="${i%2?'z':''}"><td><b style="font-weight:600;color:var(--ink-80)">${esc(e.cat)}</b></td><td class="mono">${e.code}</td><td class="num">${e.n}</td><td style="min-width:180px">${esc(e.msg)}</td></tr>`).join('')||'<tr><td colspan="4">No failures in this window</td></tr>'}</tbody></table></div></div>
+    <div><div class="h3">Recent failed requests</div><div class="tbl"><table><thead><tr><th>Time</th><th>Data</th><th>Status</th><th>Duration</th><th>Request ID</th></tr></thead><tbody>${recent.slice(0,6).map((q,i)=>`<tr class="${i%2?'z':''}"><td class="num" style="white-space:nowrap">${abs(q.t).replace(' IST','')}</td><td>${q.model}</td><td class="mono">${q.e.code}</td><td class="num">${q.ms>=1000?(q.ms/1000).toFixed(1)+'s':q.ms+'ms'}</td><td class="mono">${q.rid}</td></tr>`).join('')||'<tr><td colspan="5">None</td></tr>'}</tbody></table></div></div>
+    <div class="privacy">${I('lock')}<span>Only request metadata is kept: timing, status, record counts and error codes. No employee data from passthrough requests is stored.</span></div>`;
+  openDrawer(`${x.corp} · Live Requests`,`${HRMS_META[code].name} · Passthrough · ${x.id}`,body,`<span class="hint">Request metadata is kept for 30 days</span><button class="btn grey" type="button" id="closeReq">Close</button>`);
+  document.getElementById('closeReq').onclick=closeDrawer;
+}
+
+/* prototype controls */
+function seg(id,key){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{state[key]=b.dataset.v; state.open={}; document.querySelectorAll('#'+id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b)); render();
+  toast(key==='track'?(b.dataset.v==='proposed'?'Showing proposed passthrough tracking':'Showing what is available today'):(b.dataset.v==='pt'?'Showing a passthrough-only client':'Showing a client with scheduled and passthrough connections'));});}
+seg('segClient','client'); seg('segTrack','track');
+document.getElementById('protoToggle').onclick=()=>{const p=document.getElementById('proto'), m=p.dataset.min==='true'; p.dataset.min=!m; document.getElementById('protoToggle').setAttribute('aria-expanded',m);};
+if(innerWidth<900){document.getElementById('proto').dataset.min='true'; document.getElementById('protoToggle').setAttribute('aria-expanded','false');}
+render();
+})();
+</script>
+</html>
